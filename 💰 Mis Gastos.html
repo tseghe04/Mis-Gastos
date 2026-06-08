@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<!-- saved from url=(0055)file:///C:/Users/tsegh/Downloads/rastreador-simple.html -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Mis Gastos">
+    <title>💰 Mis Gastos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding-top: max(0px, env(safe-area-inset-top));
+            padding-bottom: max(0px, env(safe-area-inset-bottom));
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem 1rem 1rem;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .container {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 1rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .income-card {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .income-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .income-amount {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .income-btn {
+            background: rgba(255,255,255,0.3);
+            border: 1px solid white;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 500;
+            width: 100%;
+        }
+
+        .income-btn:active {
+            background: rgba(255,255,255,0.5);
+        }
+
+        .balance-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .balance-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .balance-label {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .balance-value {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .balance-positive {
+            color: #10b981;
+        }
+
+        .balance-negative {
+            color: #ef4444;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 1rem;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            -webkit-appearance: none;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            padding: 12px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
+            -webkit-appearance: none;
+        }
+
+        button:active {
+            background: #5568d3;
+            transform: scale(0.98);
+        }
+
+        .message {
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .tabs {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .tab-btn {
+            padding: 10px 8px;
+            background: #e0e0e0;
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .stat {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .transaction {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .trans-info h3 {
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: #333;
+        }
+
+        .trans-info p {
+            font-size: 12px;
+            color: #666;
+            margin: 0;
+        }
+
+        .trans-amount {
+            font-weight: 600;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 18px;
+            padding: 4px;
+            cursor: pointer;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: #999;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 1rem;
+            -webkit-appearance: none;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .modal-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .date-header {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            margin-top: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .day-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .day-card:active {
+            background: #f5f5f5;
+        }
+
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .day-title {
+            font-weight: 600;
+            color: #333;
+            text-transform: capitalize;
+        }
+
+        .day-date {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .day-amount {
+            font-size: 16px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .day-count {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .back-btn {
+            background: #e0e0e0;
+            color: #333;
+            margin-bottom: 1rem;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💰 Mis Gastos</h1>
+        <p>Rastreador offline para tu celular</p>
+        <button onclick="mostrarInstrucciones()" style="background: rgba(255,255,255,0.3); border: 1px solid white; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-top: 8px; width: 100%;">❓ Cómo agregar a pantalla de inicio</button>
+    </div>
+
+    <div class="container">
+        <!-- Ingreso -->
+        <div class="card income-card">
+            <div class="income-label">💰 Ingreso disponible</div>
+            <div class="income-amount" id="incomeDisplay">$0,00</div>
+            <button class="income-btn" onclick="openIncomeModal()">📝 Editar ingreso</button>
+        </div>
+
+        <!-- Balance -->
+        <div class="balance-grid">
+            <div class="balance-item">
+                <div class="balance-label">Gastado</div>
+                <div class="balance-value" id="spentDisplay">$0,00</div>
+            </div>
+            <div class="balance-item">
+                <div class="balance-label">Saldo</div>
+                <div class="balance-value balance-positive" id="balanceDisplay">$0,00</div>
+            </div>
+        </div>
+
+        <!-- Entrada -->
+        <div class="card">
+            <div class="input-group">
+                <input type="text" id="gastoInput" placeholder="Ej: 1420 bizcochos" autocomplete="off">
+                <button onclick="agregarGasto()">➕</button>
+            </div>
+            <div id="mensaje"></div>
+        </div>
+
+        <!-- Stats -->
+        <div id="statsDiv" class="hidden">
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">Total</div>
+                    <div class="stat-value" id="totalDisplay">$0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Gastos</div>
+                    <div class="stat-value" id="countDisplay">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Promedio</div>
+                    <div class="stat-value" id="avgDisplay">$0</div>
+                </div>
+            </div>
+
+            <!-- Pestañas -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="verHoy()">Hoy</button>
+                <button class="tab-btn" onclick="verSemana()">Semana</button>
+                <button class="tab-btn" onclick="verMes()">Mes</button>
+                <button class="tab-btn" onclick="verCategorias()">Categ.</button>
+                <button class="tab-btn" onclick="exportar()">📥</button>
+            </div>
+        </div>
+
+        <!-- Contenido -->
+        <div id="contenido"></div>
+
+        <!-- Vacío -->
+        <div id="vacio" class="empty">
+            <p>📊 Comienza a registrar</p>
+            <p style="font-size: 11px; margin-top: 8px;">Ej: "1420 bizcochos"</p>
+        </div>
+    </div>
+
+    <!-- Modal de Ingreso -->
+    <div id="modalIngreso" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">Establecer ingreso</div>
+            <input type="number" id="incomeInput" class="modal-input" placeholder="Ej: 100000" min="0">
+            <div class="modal-buttons">
+                <button class="modal-btn modal-secondary" onclick="cerrarModal()">Cancelar</button>
+                <button class="modal-btn modal-primary" onclick="guardarIngreso()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Instrucciones -->
+    <div id="modalInstrucciones" class="modal">
+        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+            <div class="modal-title">📱 Cómo agregar a pantalla de inicio</div>
+            
+            <div id="instruccionesContenido">
+                    <div style="background: #f0f7ff; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <h3 style="margin: 0 0 8px 0; color: #1a73e8;">📱 Chrome (Android)</h3>
+                        <ol style="margin: 0; padding-left: 1.2rem; font-size: 14px;">
+                            <li style="margin-bottom: 8px;"><strong>Abre este archivo</strong> en Chrome</li>
+                            <li style="margin-bottom: 8px;">Toca el <strong>menú ⋮</strong> (arriba a la derecha)</li>
+                            <li style="margin-bottom: 8px;">Busca <strong>"Instalar aplicación"</strong> o <strong>"Add to home screen"</strong></li>
+                            <li style="margin-bottom: 8px;">Dale un nombre (ej: "Mis Gastos")</li>
+                            <li style="margin-bottom: 8px;">¡Hecho! Aparecerá un ícono en tu pantalla</li>
+                        </ol>
+                    </div>
+                    <p style="font-size: 12px; color: #666; margin-top: 1rem;">💡 Si no ves esa opción, intenta en otro navegador como Firefox o Edge</p>
+                </div>
+            
+            <div style="margin-top: 1.5rem;">
+                <button class="modal-btn modal-primary" onclick="cerrarInstrucciones()" style="width: 100%;">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ingreso = 0;
+        let gastos = [];
+        const categorias = [
+            { nombre: 'alimentación', palabras: ['comida', 'bizcocho', 'bizcochito', 'pan', 'restaurante', 'cafe', 'almuerzo', 'desayuno', 'cena', 'dulce', 'pizza', 'hamburguesa'] },
+            { nombre: 'transporte', palabras: ['pasaje', 'colectivo', 'uber', 'taxi', 'gasolina', 'viaje', 'bus', 'tren'] },
+            { nombre: 'entretenimiento', palabras: ['cine', 'película', 'concierto', 'juego', 'diversión', 'entrada'] },
+            { nombre: 'servicios', palabras: ['teléfono', 'internet', 'luz', 'gas', 'agua', 'telefonía'] },
+            { nombre: 'compras', palabras: ['ropa', 'zapatos', 'tienda', 'compra', 'shopping'] },
+            { nombre: 'salud', palabras: ['farmacia', 'doctor', 'médico', 'medicina', 'consultorio'] },
+            { nombre: 'otros', palabras: [] }
+        ];
+
+        function cargar() {
+            ingreso = parseFloat(localStorage.getItem('ingreso') || 0);
+            gastos = JSON.parse(localStorage.getItem('gastos') || '[]');
+            actualizar();
+        }
+
+        function guardar() {
+            localStorage.setItem('ingreso', ingreso);
+            localStorage.setItem('gastos', JSON.stringify(gastos));
+        }
+
+        function extraerDatos(texto) {
+            const match = texto.match(/^(\d+(?:[.,]\d{1,2})?)/);
+            const monto = match ? parseFloat(match[1]) : 0;
+            const desc = texto.replace(/^\d+[.,]?\d*\s*/, '').trim() || 'Gasto';
+            
+            let cat = 'otros';
+            for (let c of categorias) {
+                if (c.palabras.some(p => texto.toLowerCase().includes(p))) {
+                    cat = c.nombre;
+                    break;
+                }
+            }
+            
+            return { monto, desc, cat };
+        }
+
+        function agregarGasto() {
+            const input = document.getElementById('gastoInput');
+            const texto = input.value.trim();
+            
+            if (!texto) {
+                mostrarMensaje('Escribe algo', 'error');
+                return;
+            }
+
+            const { monto, desc, cat } = extraerDatos(texto);
+            
+            if (monto <= 0) {
+                mostrarMensaje('Monto inválido', 'error');
+                return;
+            }
+
+            gastos.push({
+                id: Date.now(),
+                monto,
+                desc,
+                cat,
+                fecha: new Date().toLocaleDateString('es-AR')
+            });
+
+            guardar();
+            input.value = '';
+            mostrarMensaje(`✅ $${monto} en ${cat}`, 'success');
+            actualizar();
+            input.focus();
+        }
+
+        function eliminar(id) {
+            gastos = gastos.filter(g => g.id !== id);
+            guardar();
+            actualizar();
+        }
+
+        function mostrarMensaje(msg, tipo) {
+            const el = document.getElementById('mensaje');
+            el.textContent = msg;
+            el.className = 'message ' + tipo;
+            setTimeout(() => el.textContent = '', 3000);
+        }
+
+        function actualizar() {
+            const gastado = gastos.reduce((s, g) => s + g.monto, 0);
+            const saldo = ingreso - gastado;
+            const promedio = gastos.length ? gastado / gastos.length : 0;
+
+            document.getElementById('incomeDisplay').textContent = `$${ingreso.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+            document.getElementById('spentDisplay').textContent = `$${gastado.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+            
+            const balEl = document.getElementById('balanceDisplay');
+            balEl.textContent = `$${Math.abs(saldo).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+            balEl.className = 'balance-value ' + (saldo >= 0 ? 'balance-positive' : 'balance-negative');
+
+            if (gastos.length === 0) {
+                document.getElementById('statsDiv').classList.add('hidden');
+                document.getElementById('vacio').classList.remove('hidden');
+                document.getElementById('contenido').innerHTML = '';
+            } else {
+                document.getElementById('statsDiv').classList.remove('hidden');
+                document.getElementById('vacio').classList.add('hidden');
+
+                document.getElementById('totalDisplay').textContent = `$${gastado.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+                document.getElementById('countDisplay').textContent = gastos.length;
+                document.getElementById('avgDisplay').textContent = `$${promedio.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+
+                verHoy();
+            }
+        }
+
+        function renderizarGastos(lista) {
+            const agrupados = {};
+            lista.sort((a, b) => b.id - a.id);
+            lista.forEach(g => {
+                if (!agrupados[g.fecha]) agrupados[g.fecha] = [];
+                agrupados[g.fecha].push(g);
+            });
+
+            let html = '';
+            Object.entries(agrupados).forEach(([fecha, items]) => {
+                const total = items.reduce((s, i) => s + i.monto, 0);
+                html += `<div class="date-header">${fecha} • $${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</div>`;
+                items.forEach(g => {
+                    html += `
+                        <div class="transaction">
+                            <div class="trans-info">
+                                <h3>${g.desc}</h3>
+                                <p>${g.cat}</p>
+                            </div>
+                            <div class="trans-amount">$${g.monto.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</div>
+                            <button class="delete-btn" onclick="eliminar(${g.id})">✕</button>
+                        </div>
+                    `;
+                });
+            });
+            document.getElementById('contenido').innerHTML = html || '<div class="empty">Sin gastos</div>';
+        }
+
+        function verHoy() {
+            const hoy = new Date().toLocaleDateString('es-AR');
+            const filtrados = gastos.filter(g => g.fecha === hoy);
+            renderizarGastos(filtrados);
+        }
+
+        function verSemana() {
+            const hoy = new Date();
+            const inicio = new Date(hoy);
+            inicio.setDate(hoy.getDate() - hoy.getDay() + (hoy.getDay() === 0 ? -6 : 1));
+            
+            const semana = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(inicio);
+                d.setDate(d.getDate() + i);
+                semana.push(d.toLocaleDateString('es-AR'));
+            }
+
+            const filtrados = gastos.filter(g => semana.includes(g.fecha));
+            const porDia = {};
+            semana.forEach(f => {
+                porDia[f] = filtrados.filter(g => g.fecha === f);
+            });
+
+            let html = '';
+            Object.entries(porDia).forEach(([fecha, items]) => {
+                const total = items.reduce((s, i) => s + i.monto, 0);
+                const nombreDia = new Date(fecha.split('/').reverse().join('-')).toLocaleDateString('es-AR', { weekday: 'long' });
+                if (total > 0) {
+                    html += `
+                        <div class="day-card" onclick="verDiaDetalle('${fecha}')">
+                            <div class="day-header">
+                                <div>
+                                    <div class="day-title">${nombreDia}</div>
+                                    <div class="day-date">${fecha}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="day-amount">$${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</div>
+                                    <div class="day-count">${items.length}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            document.getElementById('contenido').innerHTML = html || '<div class="empty">Sin gastos</div>';
+        }
+
+        function verMes() {
+            const hoy = new Date();
+            const año = hoy.getFullYear();
+            const mes = hoy.getMonth();
+            
+            const primer = new Date(año, mes, 1);
+            const ultimo = new Date(año, mes + 1, 0);
+            
+            const semanas = {};
+            for (let d = new Date(primer); d <= ultimo; d.setDate(d.getDate() + 1)) {
+                const semNum = Math.ceil((d.getDate() + 6) / 7);
+                const key = `Semana ${semNum}`;
+                if (!semanas[key]) semanas[key] = [];
+                semanas[key].push(new Date(d).toLocaleDateString('es-AR'));
+            }
+
+            let html = '';
+            Object.entries(semanas).forEach(([semLabel, fechas]) => {
+                const items = gastos.filter(g => fechas.includes(g.fecha));
+                const total = items.reduce((s, i) => s + i.monto, 0);
+                if (total > 0 || items.length > 0) {
+                    html += `
+                        <div class="day-card" onclick="verSemanaDetalle('${semLabel}', ${JSON.stringify(fechas)})">
+                            <div class="day-header">
+                                <div>
+                                    <div class="day-title">${semLabel}</div>
+                                    <div class="day-date">${fechas[0]} - ${fechas[fechas.length-1]}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="day-amount">$${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</div>
+                                    <div class="day-count">${items.length}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            document.getElementById('contenido').innerHTML = html || '<div class="empty">Sin gastos</div>';
+        }
+
+        function verCategorias() {
+            const porCat = {};
+            categorias.forEach(c => {
+                porCat[c.nombre] = gastos.filter(g => g.cat === c.nombre);
+            });
+
+            const total = gastos.reduce((s, g) => s + g.monto, 0);
+
+            let html = '';
+            Object.entries(porCat).forEach(([cat, items]) => {
+                const suma = items.reduce((s, i) => s + i.monto, 0);
+                if (suma === 0) return;
+                const pct = ((suma / total) * 100).toFixed(1);
+                html += `
+                    <div class="day-card" onclick="verCatDetalle('${cat}')">
+                        <div style="margin-bottom: 8px; font-weight: 600;">${cat}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="flex: 1;">
+                                <div style="background: #e0e0e0; height: 4px; border-radius: 2px; overflow: hidden; margin-bottom: 6px;">
+                                    <div style="width: ${pct}%; height: 100%; background: #667eea;"></div>
+                                </div>
+                            </div>
+                            <div style="text-align: right; margin-left: 12px;">
+                                <div style="font-weight: 600; color: #667eea;">$${suma.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</div>
+                                <div style="font-size: 11px; color: #666;">${pct}%</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('contenido').innerHTML = html || '<div class="empty">Sin gastos</div>';
+        }
+
+        function verDiaDetalle(fecha) {
+            const items = gastos.filter(g => g.fecha === fecha);
+            let html = `<button class="back-btn" onclick="verSemana()">← Volver</button>`;
+            document.getElementById('contenido').innerHTML = html;
+            renderizarGastos(items);
+        }
+
+        function verSemanaDetalle(label, fechas) {
+            const items = gastos.filter(g => fechas.includes(g.fecha));
+            let html = `<button class="back-btn" onclick="verMes()">← Volver</button>`;
+            document.getElementById('contenido').innerHTML = html;
+            renderizarGastos(items);
+        }
+
+        function verCatDetalle(cat) {
+            const items = gastos.filter(g => g.cat === cat);
+            let html = `<button class="back-btn" onclick="verCategorias()">← Volver</button>`;
+            document.getElementById('contenido').innerHTML = html;
+            renderizarGastos(items);
+        }
+
+        function openIncomeModal() {
+            document.getElementById('modalIngreso').classList.add('active');
+            document.getElementById('incomeInput').value = ingreso;
+            document.getElementById('incomeInput').focus();
+        }
+
+        function cerrarModal() {
+            document.getElementById('modalIngreso').classList.remove('active');
+        }
+
+        function guardarIngreso() {
+            const val = parseFloat(document.getElementById('incomeInput').value);
+            if (isNaN(val) || val < 0) {
+                alert('Ingresa un monto válido');
+                return;
+            }
+            ingreso = val;
+            guardar();
+            actualizar();
+            cerrarModal();
+        }
+
+        function exportar() {
+            const csv = 'Fecha,Monto,Categoría,Descripción\n' + 
+                gastos.map(g => `${g.fecha},${g.monto},${g.cat},"${g.desc}"`).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `gastos-${new Date().toLocaleDateString('es-AR')}.csv`;
+            a.click();
+        }
+
+        document.getElementById('gastoInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') agregarGasto();
+        });
+
+        document.getElementById('incomeInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') guardarIngreso();
+        });
+
+        document.getElementById('modalIngreso').addEventListener('click', (e) => {
+            if (e.target.id === 'modalIngreso') cerrarModal();
+        });
+
+        function detectarNavegador() {
+            const ua = navigator.userAgent.toLowerCase();
+            if (ua.includes('chrome') && !ua.includes('edge')) return 'chrome';
+            if (ua.includes('firefox')) return 'firefox';
+            if (ua.includes('safari') && !ua.includes('chrome')) return 'safari';
+            if (ua.includes('edge')) return 'edge';
+            if (ua.includes('opera') || ua.includes('opr')) return 'opera';
+            return 'otro';
+        }
+
+        function mostrarInstrucciones() {
+            const nav = detectarNavegador();
+            let html = '';
+
+            if (nav === 'chrome') {
+                html = `
+                    <div style="background: #f0f7ff; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <h3 style="margin: 0 0 8px 0; color: #1a73e8;">📱 Chrome (Android)</h3>
+                        <ol style="margin: 0; padding-left: 1.2rem; font-size: 14px;">
+                            <li style="margin-bottom: 8px;"><strong>Abre este archivo</strong> en Chrome</li>
+                            <li style="margin-bottom: 8px;">Toca el <strong>menú ⋮</strong> (arriba a la derecha)</li>
+                            <li style="margin-bottom: 8px;">Busca <strong>"Instalar aplicación"</strong> o <strong>"Add to home screen"</strong></li>
+                            <li style="margin-bottom: 8px;">Dale un nombre (ej: "Mis Gastos")</li>
+                            <li style="margin-bottom: 8px;">¡Hecho! Aparecerá un ícono en tu pantalla</li>
+                        </ol>
+                    </div>
+                    <p style="font-size: 12px; color: #666; margin-top: 1rem;">💡 Si no ves esa opción, intenta en otro navegador como Firefox o Edge</p>
+                `;
+            } else if (nav === 'firefox') {
+                html = `
+                    <div style="background: #fff3e0; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <h3 style="margin: 0 0 8px 0; color: #e65100;">🦊 Firefox (Android)</h3>
+                        <ol style="margin: 0; padding-left: 1.2rem; font-size: 14px;">
+                            <li style="margin-bottom: 8px;"><strong>Abre este archivo</strong> en Firefox</li>
+                            <li style="margin-bottom: 8px;">Toca el <strong>menú ⋮</strong> (arriba a la derecha)</li>
+                            <li style="margin-bottom: 8px;">Busca <strong>"Instalar"</strong> o <strong>"Add to home screen"</strong></li>
+                            <li style="margin-bottom: 8px;">Dale un nombre (ej: "Mis Gastos")</li>
+                            <li style="margin-bottom: 8px;">¡Listo! Se agregará a tu pantalla</li>
+                        </ol>
+                    </div>
+                `;
+            } else if (nav === 'safari') {
+                html = `
+                    <div style="background: #e8f5e9; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <h3 style="margin: 0 0 8px 0; color: #1b5e20;">🍎 Safari (iPhone/iPad)</h3>
+                        <ol style="margin: 0; padding-left: 1.2rem; font-size: 14px;">
+                            <li style="margin-bottom: 8px;"><strong>Abre este archivo</strong> en Safari</li>
+                            <li style="margin-bottom: 8px;">Toca el botón <strong>Compartir ↑</strong> (abajo de la pantalla)</li>
+                            <li style="margin-bottom: 8px;">Desplázate y busca <strong>"Añadir a pantalla de inicio"</strong></li>
+                            <li style="margin-bottom: 8px;">Dale un nombre (ej: "Mis Gastos")</li>
+                            <li style="margin-bottom: 8px;">¡Aparecerá en tu pantalla de inicio!</li>
+                        </ol>
+                    </div>
+                `;
+            } else if (nav === 'edge') {
+                html = `
+                    <div style="background: #f0f7ff; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <h3 style="margin: 0 0 8px 0; color: #0078d4;">📘 Edge (Android)</h3>
+                        <ol style="margin: 0; padding-left: 1.2rem; font-size: 14px;">
+                            <li style="margin-bottom: 8px;"><strong>Abre este archivo</strong> en Edge</li>
+                            <li style="margin-bottom: 8px;">Toca los <strong>3 puntos ⋯</strong> (abajo a la derecha)</li>
+                            <li style="margin-bottom: 8px;">Se abre un menú pequeño</li>
+                            <li style="margin-bottom: 8px;">En ese menú, toca <strong>"⋯ Todo el menú"</strong> (la última opción)</li>
+                            <li style="margin-bottom: 8px;">Se abre otro menú más grande</li>
+                            <li style="margin-bottom: 8px;">Busca <strong>"Agregar al teléfono"</strong> o <strong>"Agregar a pantalla de inicio"</strong></li>
+                            <li style="margin-bottom: 8px;">¡Aparecerá en tu pantalla de inicio!</li>
+                        </ol>
+                        <div style="background: #e3f2fd; padding: 8px; border-radius: 6px; margin-top: 1rem; font-size: 12px;">
+                            💡 Si no ves esa opción en el menú, intenta con Firefox o Chrome
+                        </div>
+                    </div>
+                `;
+            } else {
+                html = `
+                    <div style="background: #fce4ec; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <h3 style="margin: 0 0 8px 0; color: #880e4f;">📱 Navegador desconocido</h3>
+                        <p style="margin: 0 0 8px 0; font-size: 14px;">Prueba con uno de estos navegadores (recomendado):</p>
+                        <ul style="margin: 0; padding-left: 1.2rem; font-size: 14px;">
+                            <li>✅ Chrome</li>
+                            <li>✅ Firefox</li>
+                            <li>✅ Edge</li>
+                            <li>✅ Safari</li>
+                        </ul>
+                        <p style="margin-top: 8px; font-size: 12px; color: #666;">Todos tienen la opción "Agregar a pantalla de inicio" en su menú</p>
+                    </div>
+                `;
+            }
+
+            document.getElementById('instruccionesContenido').innerHTML = html;
+            document.getElementById('modalInstrucciones').classList.add('active');
+        }
+
+        function cerrarInstrucciones() {
+            document.getElementById('modalInstrucciones').classList.remove('active');
+        }
+
+        document.getElementById('modalInstrucciones').addEventListener('click', (e) => {
+            if (e.target.id === 'modalInstrucciones') cerrarInstrucciones();
+        });
+
+        cargar();
+    </script>
+
+
+</body></html>
