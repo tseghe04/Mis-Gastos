@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<!-- saved from url=(0055)file:///C:/Users/tsegh/Downloads/rastreador-simple.html -->
-<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#667eea">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mis Gastos">
-    <title>💰 Mis Gastos</title>
+    <title>💰 Mis Gastos - Offline</title>
     <style>
         * {
             margin: 0;
@@ -64,24 +64,24 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
 
-        .income-card {
+        .saldo-card {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: white;
         }
 
-        .income-label {
+        .saldo-label {
             font-size: 12px;
             opacity: 0.9;
             margin-bottom: 8px;
         }
 
-        .income-amount {
+        .saldo-amount {
             font-size: 28px;
             font-weight: 600;
             margin-bottom: 12px;
         }
 
-        .income-btn {
+        .saldo-btn {
             background: rgba(255,255,255,0.3);
             border: 1px solid white;
             color: white;
@@ -91,9 +91,10 @@
             cursor: pointer;
             font-weight: 500;
             width: 100%;
+            -webkit-appearance: none;
         }
 
-        .income-btn:active {
+        .saldo-btn:active {
             background: rgba(255,255,255,0.5);
         }
 
@@ -202,6 +203,7 @@
             font-size: 11px;
             cursor: pointer;
             font-weight: 600;
+            -webkit-appearance: none;
         }
 
         .tab-btn.active {
@@ -271,6 +273,7 @@
             font-size: 18px;
             padding: 4px;
             cursor: pointer;
+            -webkit-appearance: none;
         }
 
         .empty {
@@ -337,6 +340,7 @@
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
+            -webkit-appearance: none;
         }
 
         .modal-primary {
@@ -404,36 +408,48 @@
             margin-bottom: 1rem;
             width: 100%;
         }
+
+        .carga-item {
+            background: #e8f5e9;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .carga-monto {
+            font-weight: 600;
+            color: #10b981;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>💰 Mis Gastos</h1>
-        <p>Rastreador offline para tu celular</p>
-        <button onclick="mostrarInstrucciones()" style="background: rgba(255,255,255,0.3); border: 1px solid white; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-top: 8px; width: 100%;">❓ Cómo agregar a pantalla de inicio</button>
+        <p>Rastreador offline - Sin conexión no hay problema</p>
     </div>
 
     <div class="container">
-        <!-- Ingreso -->
-        <div class="card income-card">
-            <div class="income-label">💰 Ingreso disponible</div>
-            <div class="income-amount" id="incomeDisplay">$0,00</div>
-            <button class="income-btn" onclick="openIncomeModal()">📝 Editar ingreso</button>
+        <div class="card saldo-card">
+            <div class="saldo-label">💵 Saldo Total</div>
+            <div class="saldo-amount" id="saldoDisplay">$0</div>
+            <button class="saldo-btn" onclick="openSaldoModal()">➕ Cargar Saldo</button>
         </div>
 
-        <!-- Balance -->
         <div class="balance-grid">
             <div class="balance-item">
                 <div class="balance-label">Gastado</div>
-                <div class="balance-value" id="spentDisplay">$0,00</div>
+                <div class="balance-value" id="spentDisplay">$0</div>
             </div>
             <div class="balance-item">
-                <div class="balance-label">Saldo</div>
-                <div class="balance-value balance-positive" id="balanceDisplay">$0,00</div>
+                <div class="balance-label">Disponible</div>
+                <div class="balance-value" id="balanceDisplay">$0</div>
             </div>
         </div>
 
-        <!-- Entrada -->
         <div class="card">
             <div class="input-group">
                 <input type="text" id="gastoInput" placeholder="Ej: 1420 bizcochos" autocomplete="off">
@@ -442,11 +458,10 @@
             <div id="mensaje"></div>
         </div>
 
-        <!-- Stats -->
         <div id="statsDiv" class="hidden">
             <div class="stats">
                 <div class="stat">
-                    <div class="stat-label">Total</div>
+                    <div class="stat-label">Total Gastado</div>
                     <div class="stat-value" id="totalDisplay">$0</div>
                 </div>
                 <div class="stat">
@@ -459,7 +474,6 @@
                 </div>
             </div>
 
-            <!-- Pestañas -->
             <div class="tabs">
                 <button class="tab-btn active" onclick="verHoy()">Hoy</button>
                 <button class="tab-btn" onclick="verSemana()">Semana</button>
@@ -469,55 +483,46 @@
             </div>
         </div>
 
-        <!-- Contenido -->
         <div id="contenido"></div>
 
-        <!-- Vacío -->
         <div id="vacio" class="empty">
             <p>📊 Comienza a registrar</p>
             <p style="font-size: 11px; margin-top: 8px;">Ej: "1420 bizcochos"</p>
         </div>
     </div>
 
-    <!-- Modal de Ingreso -->
-    <div id="modalIngreso" class="modal">
+    <div id="modalSaldo" class="modal">
         <div class="modal-content">
-            <div class="modal-title">Establecer ingreso</div>
-            <input type="number" id="incomeInput" class="modal-input" placeholder="Ej: 100000" min="0">
+            <div class="modal-title">Cargar Saldo</div>
+            <input type="number" id="saldoInput" class="modal-input" placeholder="Ej: 100000" min="0">
+            <div id="cargasLista" style="margin-bottom: 1rem; max-height: 150px; overflow-y: auto;"></div>
             <div class="modal-buttons">
-                <button class="modal-btn modal-secondary" onclick="cerrarModal()">Cancelar</button>
-                <button class="modal-btn modal-primary" onclick="guardarIngreso()">Guardar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Instrucciones -->
-    <div id="modalInstrucciones" class="modal">
-        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
-            <div class="modal-title">📱 Cómo agregar a pantalla de inicio</div>
-            
-            <div id="instruccionesContenido">
-                    <div style="background: #f0f7ff; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                        <h3 style="margin: 0 0 8px 0; color: #1a73e8;">📱 Chrome (Android)</h3>
-                        <ol style="margin: 0; padding-left: 1.2rem; font-size: 14px;">
-                            <li style="margin-bottom: 8px;"><strong>Abre este archivo</strong> en Chrome</li>
-                            <li style="margin-bottom: 8px;">Toca el <strong>menú ⋮</strong> (arriba a la derecha)</li>
-                            <li style="margin-bottom: 8px;">Busca <strong>"Instalar aplicación"</strong> o <strong>"Add to home screen"</strong></li>
-                            <li style="margin-bottom: 8px;">Dale un nombre (ej: "Mis Gastos")</li>
-                            <li style="margin-bottom: 8px;">¡Hecho! Aparecerá un ícono en tu pantalla</li>
-                        </ol>
-                    </div>
-                    <p style="font-size: 12px; color: #666; margin-top: 1rem;">💡 Si no ves esa opción, intenta en otro navegador como Firefox o Edge</p>
-                </div>
-            
-            <div style="margin-top: 1.5rem;">
-                <button class="modal-btn modal-primary" onclick="cerrarInstrucciones()" style="width: 100%;">Entendido</button>
+                <button class="modal-btn modal-secondary" onclick="cerrarSaldoModal()">Cancelar</button>
+                <button class="modal-btn modal-primary" onclick="guardarSaldo()">Cargar</button>
             </div>
         </div>
     </div>
 
     <script>
-        let ingreso = 0;
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`
+                const CACHE = 'gastos-v1';
+                self.addEventListener('install', e => {
+                    self.skipWaiting();
+                });
+                self.addEventListener('activate', e => {
+                    e.waitUntil(self.clients.claim());
+                });
+                self.addEventListener('fetch', e => {
+                    e.respondWith(
+                        caches.match(e.request).then(r => r || fetch(e.request).catch(() => new Response('Offline')))
+                    );
+                });
+            `), { scope: '/' }).catch(e => console.log('SW error:', e));
+        }
+
+        let cargas = [];
         let gastos = [];
         const categorias = [
             { nombre: 'alimentación', palabras: ['comida', 'bizcocho', 'bizcochito', 'pan', 'restaurante', 'cafe', 'almuerzo', 'desayuno', 'cena', 'dulce', 'pizza', 'hamburguesa'] },
@@ -530,14 +535,27 @@
         ];
 
         function cargar() {
-            ingreso = parseFloat(localStorage.getItem('ingreso') || 0);
-            gastos = JSON.parse(localStorage.getItem('gastos') || '[]');
+            try {
+                cargas = JSON.parse(localStorage.getItem('cargas') || '[]');
+                gastos = JSON.parse(localStorage.getItem('gastos') || '[]');
+            } catch (e) {
+                cargas = [];
+                gastos = [];
+            }
             actualizar();
         }
 
         function guardar() {
-            localStorage.setItem('ingreso', ingreso);
-            localStorage.setItem('gastos', JSON.stringify(gastos));
+            try {
+                localStorage.setItem('cargas', JSON.stringify(cargas));
+                localStorage.setItem('gastos', JSON.stringify(gastos));
+            } catch (e) {
+                console.error('Error guardando:', e);
+            }
+        }
+
+        function obtenerSaldoTotal() {
+            return cargas.reduce((sum, c) => sum + c.monto, 0);
         }
 
         function extraerDatos(texto) {
@@ -572,6 +590,12 @@
                 return;
             }
 
+            const saldoDisponible = obtenerSaldoTotal() - gastos.reduce((s, g) => s + g.monto, 0);
+            if (monto > saldoDisponible) {
+                mostrarMensaje('Saldo insuficiente', 'error');
+                return;
+            }
+
             gastos.push({
                 id: Date.now(),
                 monto,
@@ -601,16 +625,17 @@
         }
 
         function actualizar() {
+            const saldoTotal = obtenerSaldoTotal();
             const gastado = gastos.reduce((s, g) => s + g.monto, 0);
-            const saldo = ingreso - gastado;
+            const disponible = saldoTotal - gastado;
             const promedio = gastos.length ? gastado / gastos.length : 0;
 
-            document.getElementById('incomeDisplay').textContent = `$${ingreso.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+            document.getElementById('saldoDisplay').textContent = `$${saldoTotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
             document.getElementById('spentDisplay').textContent = `$${gastado.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
             
             const balEl = document.getElementById('balanceDisplay');
-            balEl.textContent = `$${Math.abs(saldo).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
-            balEl.className = 'balance-value ' + (saldo >= 0 ? 'balance-positive' : 'balance-negative');
+            balEl.textContent = `$${Math.abs(disponible).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+            balEl.className = 'balance-value ' + (disponible >= 0 ? 'balance-positive' : 'balance-negative');
 
             if (gastos.length === 0) {
                 document.getElementById('statsDiv').classList.add('hidden');
@@ -798,27 +823,69 @@
             renderizarGastos(items);
         }
 
-        function openIncomeModal() {
-            document.getElementById('modalIngreso').classList.add('active');
-            document.getElementById('incomeInput').value = ingreso;
-            document.getElementById('incomeInput').focus();
+        function openSaldoModal() {
+            document.getElementById('modalSaldo').classList.add('active');
+            document.getElementById('saldoInput').value = '';
+            renderizarCargas();
+            document.getElementById('saldoInput').focus();
         }
 
-        function cerrarModal() {
-            document.getElementById('modalIngreso').classList.remove('active');
+        function cerrarSaldoModal() {
+            document.getElementById('modalSaldo').classList.remove('active');
         }
 
-        function guardarIngreso() {
-            const val = parseFloat(document.getElementById('incomeInput').value);
-            if (isNaN(val) || val < 0) {
+        function renderizarCargas() {
+            let html = '';
+            cargas.forEach((c, idx) => {
+                html += `
+                    <div class="carga-item">
+                        <span>Carga ${idx + 1}</span>
+                        <div>
+                            <span class="carga-monto">$${c.monto.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+                            <button style="background: none; border: none; color: #999; margin-left: 12px; cursor: pointer;" onclick="eliminarCarga(${idx})">✕</button>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('cargasLista').innerHTML = html || '<p style="font-size: 11px; color: #999; text-align: center;">Sin cargas aún</p>';
+        }
+
+        function guardarSaldo() {
+            const val = parseFloat(document.getElementById('saldoInput').value);
+            if (isNaN(val) || val <= 0) {
                 alert('Ingresa un monto válido');
                 return;
             }
-            ingreso = val;
+            cargas.push({
+                id: Date.now(),
+                monto: val,
+                fecha: new Date().toLocaleDateString('es-AR')
+            });
             guardar();
             actualizar();
-            cerrarModal();
+            document.getElementById('saldoInput').value = '';
+            renderizarCargas();
+            mostrarMensaje(`✅ Saldo de $${val.toLocaleString('es-AR', { minimumFractionDigits: 2 })} cargado`, 'success');
         }
+
+        function eliminarCarga(idx) {
+            cargas.splice(idx, 1);
+            guardar();
+            actualizar();
+            renderizarCargas();
+        }
+
+        document.getElementById('gastoInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') agregarGasto();
+        });
+
+        document.getElementById('saldoInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') guardarSaldo();
+        });
+
+        document.getElementById('modalSaldo').addEventListener('click', (e) => {
+            if (e.target.id === 'modalSaldo') cerrarSaldoModal();
+        });
 
         function exportar() {
             const csv = 'Fecha,Monto,Categoría,Descripción\n' + 
@@ -831,120 +898,7 @@
             a.click();
         }
 
-        document.getElementById('gastoInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') agregarGasto();
-        });
-
-        document.getElementById('incomeInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') guardarIngreso();
-        });
-
-        document.getElementById('modalIngreso').addEventListener('click', (e) => {
-            if (e.target.id === 'modalIngreso') cerrarModal();
-        });
-
-        function detectarNavegador() {
-            const ua = navigator.userAgent.toLowerCase();
-            if (ua.includes('chrome') && !ua.includes('edge')) return 'chrome';
-            if (ua.includes('firefox')) return 'firefox';
-            if (ua.includes('safari') && !ua.includes('chrome')) return 'safari';
-            if (ua.includes('edge')) return 'edge';
-            if (ua.includes('opera') || ua.includes('opr')) return 'opera';
-            return 'otro';
-        }
-
-        function mostrarInstrucciones() {
-            const nav = detectarNavegador();
-            let html = '';
-
-            if (nav === 'chrome') {
-                html = `
-                    <div style="background: #f0f7ff; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                        <h3 style="margin: 0 0 8px 0; color: #1a73e8;">📱 Chrome (Android)</h3>
-                        <ol style="margin: 0; padding-left: 1.2rem; font-size: 14px;">
-                            <li style="margin-bottom: 8px;"><strong>Abre este archivo</strong> en Chrome</li>
-                            <li style="margin-bottom: 8px;">Toca el <strong>menú ⋮</strong> (arriba a la derecha)</li>
-                            <li style="margin-bottom: 8px;">Busca <strong>"Instalar aplicación"</strong> o <strong>"Add to home screen"</strong></li>
-                            <li style="margin-bottom: 8px;">Dale un nombre (ej: "Mis Gastos")</li>
-                            <li style="margin-bottom: 8px;">¡Hecho! Aparecerá un ícono en tu pantalla</li>
-                        </ol>
-                    </div>
-                    <p style="font-size: 12px; color: #666; margin-top: 1rem;">💡 Si no ves esa opción, intenta en otro navegador como Firefox o Edge</p>
-                `;
-            } else if (nav === 'firefox') {
-                html = `
-                    <div style="background: #fff3e0; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                        <h3 style="margin: 0 0 8px 0; color: #e65100;">🦊 Firefox (Android)</h3>
-                        <ol style="margin: 0; padding-left: 1.2rem; font-size: 14px;">
-                            <li style="margin-bottom: 8px;"><strong>Abre este archivo</strong> en Firefox</li>
-                            <li style="margin-bottom: 8px;">Toca el <strong>menú ⋮</strong> (arriba a la derecha)</li>
-                            <li style="margin-bottom: 8px;">Busca <strong>"Instalar"</strong> o <strong>"Add to home screen"</strong></li>
-                            <li style="margin-bottom: 8px;">Dale un nombre (ej: "Mis Gastos")</li>
-                            <li style="margin-bottom: 8px;">¡Listo! Se agregará a tu pantalla</li>
-                        </ol>
-                    </div>
-                `;
-            } else if (nav === 'safari') {
-                html = `
-                    <div style="background: #e8f5e9; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                        <h3 style="margin: 0 0 8px 0; color: #1b5e20;">🍎 Safari (iPhone/iPad)</h3>
-                        <ol style="margin: 0; padding-left: 1.2rem; font-size: 14px;">
-                            <li style="margin-bottom: 8px;"><strong>Abre este archivo</strong> en Safari</li>
-                            <li style="margin-bottom: 8px;">Toca el botón <strong>Compartir ↑</strong> (abajo de la pantalla)</li>
-                            <li style="margin-bottom: 8px;">Desplázate y busca <strong>"Añadir a pantalla de inicio"</strong></li>
-                            <li style="margin-bottom: 8px;">Dale un nombre (ej: "Mis Gastos")</li>
-                            <li style="margin-bottom: 8px;">¡Aparecerá en tu pantalla de inicio!</li>
-                        </ol>
-                    </div>
-                `;
-            } else if (nav === 'edge') {
-                html = `
-                    <div style="background: #f0f7ff; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                        <h3 style="margin: 0 0 8px 0; color: #0078d4;">📘 Edge (Android)</h3>
-                        <ol style="margin: 0; padding-left: 1.2rem; font-size: 14px;">
-                            <li style="margin-bottom: 8px;"><strong>Abre este archivo</strong> en Edge</li>
-                            <li style="margin-bottom: 8px;">Toca los <strong>3 puntos ⋯</strong> (abajo a la derecha)</li>
-                            <li style="margin-bottom: 8px;">Se abre un menú pequeño</li>
-                            <li style="margin-bottom: 8px;">En ese menú, toca <strong>"⋯ Todo el menú"</strong> (la última opción)</li>
-                            <li style="margin-bottom: 8px;">Se abre otro menú más grande</li>
-                            <li style="margin-bottom: 8px;">Busca <strong>"Agregar al teléfono"</strong> o <strong>"Agregar a pantalla de inicio"</strong></li>
-                            <li style="margin-bottom: 8px;">¡Aparecerá en tu pantalla de inicio!</li>
-                        </ol>
-                        <div style="background: #e3f2fd; padding: 8px; border-radius: 6px; margin-top: 1rem; font-size: 12px;">
-                            💡 Si no ves esa opción en el menú, intenta con Firefox o Chrome
-                        </div>
-                    </div>
-                `;
-            } else {
-                html = `
-                    <div style="background: #fce4ec; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                        <h3 style="margin: 0 0 8px 0; color: #880e4f;">📱 Navegador desconocido</h3>
-                        <p style="margin: 0 0 8px 0; font-size: 14px;">Prueba con uno de estos navegadores (recomendado):</p>
-                        <ul style="margin: 0; padding-left: 1.2rem; font-size: 14px;">
-                            <li>✅ Chrome</li>
-                            <li>✅ Firefox</li>
-                            <li>✅ Edge</li>
-                            <li>✅ Safari</li>
-                        </ul>
-                        <p style="margin-top: 8px; font-size: 12px; color: #666;">Todos tienen la opción "Agregar a pantalla de inicio" en su menú</p>
-                    </div>
-                `;
-            }
-
-            document.getElementById('instruccionesContenido').innerHTML = html;
-            document.getElementById('modalInstrucciones').classList.add('active');
-        }
-
-        function cerrarInstrucciones() {
-            document.getElementById('modalInstrucciones').classList.remove('active');
-        }
-
-        document.getElementById('modalInstrucciones').addEventListener('click', (e) => {
-            if (e.target.id === 'modalInstrucciones') cerrarInstrucciones();
-        });
-
         cargar();
     </script>
-
-
-</body></html>
+</body>
+</html>
