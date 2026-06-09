@@ -31,12 +31,56 @@
             padding-bottom: max(0px, env(safe-area-inset-bottom));
         }
 
+        .status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 8px 1rem;
+            font-size: 12px;
+            font-weight: 500;
+            z-index: 2000;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-bar.offline {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .status-bar.online {
+            background: #10b981;
+            color: white;
+        }
+
+        .status-bar.syncing {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: white;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 1.5rem 1rem 1rem;
             text-align: center;
             flex-shrink: 0;
+            margin-top: 28px;
         }
 
         .header h1 {
@@ -187,6 +231,11 @@
             color: #721c24;
         }
 
+        .message.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
         .tabs {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -246,6 +295,24 @@
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            position: relative;
+        }
+
+        .transaction.pending {
+            opacity: 0.7;
+            border-left: 3px solid #f59e0b;
+        }
+
+        .pending-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: #f59e0b;
+            color: white;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
         }
 
         .trans-info h3 {
@@ -420,16 +487,35 @@
             font-size: 12px;
         }
 
+        .carga-item.pending {
+            background: #fef3c7;
+            opacity: 0.7;
+        }
+
         .carga-monto {
             font-weight: 600;
             color: #10b981;
         }
+
+        .sync-info {
+            font-size: 10px;
+            color: #999;
+            text-align: center;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #eee;
+        }
     </style>
 </head>
 <body>
+    <div class="status-bar offline" id="statusBar">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Detectando conexión...</span>
+    </div>
+
     <div class="header">
         <h1>💰 Mis Gastos</h1>
-        <p>Rastreador offline - Sin conexión no hay problema</p>
+        <p>Funciona sin conexión - Sincronización automática</p>
     </div>
 
     <div class="container">
@@ -504,26 +590,140 @@
     </div>
 
     <script>
-        // Service Worker Registration
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`
-                const CACHE = 'gastos-v1';
-                self.addEventListener('install', e => {
-                    self.skipWaiting();
-                });
-                self.addEventListener('activate', e => {
-                    e.waitUntil(self.clients.claim());
-                });
-                self.addEventListener('fetch', e => {
-                    e.respondWith(
-                        caches.match(e.request).then(r => r || fetch(e.request).catch(() => new Response('Offline')))
-                    );
-                });
-            `), { scope: '/' }).catch(e => console.log('SW error:', e));
+        // ============================================
+        // GESTOR DE ESTADO DE CONEXIÓN
+        // ============================================
+        let isOnline = navigator.onLine;
+
+        function actualizarEstadoConexion() {
+            const statusBar = document.getElementById('statusBar');
+            const statusText = document.getElementById('statusText');
+            
+            if (isOnline) {
+                statusBar.className = 'status-bar online';
+                statusText.textContent = '✓ Conectado';
+                sincronizar();
+            } else {
+                statusBar.className = 'status-bar offline';
+                statusText.textContent = '✗ Sin conexión - Los cambios se guardarán automáticamente';
+            }
         }
 
+        window.addEventListener('online', () => {
+            isOnline = true;
+            actualizarEstadoConexion();
+        });
+
+        window.addEventListener('offline', () => {
+            isOnline = false;
+            actualizarEstadoConexion();
+        });
+
+        // ============================================
+        // SERVICE WORKER - REGISTRACIÓN Y CACHE
+        // ============================================
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                const CACHE_NAME = 'mis-gastos-v1';
+                const urlsToCache = ['/'];
+
+                self.addEventListener('install', (e) => {
+                    e.waitUntil(
+                        caches.open(CACHE_NAME).then((cache) => {
+                            return cache.addAll(urlsToCache).catch(() => {
+                                console.log('Offline: cachés básicos cargados');
+                            });
+                        })
+                    );
+                    self.skipWaiting();
+                });
+
+                self.addEventListener('activate', (e) => {
+                    e.waitUntil(
+                        caches.keys().then((names) => {
+                            return Promise.all(
+                                names.map((name) => {
+                                    if (name !== CACHE_NAME) {
+                                        return caches.delete(name);
+                                    }
+                                })
+                            );
+                        })
+                    );
+                    self.clients.claim();
+                });
+
+                self.addEventListener('fetch', (e) => {
+                    // Para requests GET, usar network-first, caer a cache
+                    if (e.request.method === 'GET') {
+                        e.respondWith(
+                            fetch(e.request)
+                                .then((response) => {
+                                    // Cachear la respuesta exitosa
+                                    if (response && response.status === 200) {
+                                        const responseToCache = response.clone();
+                                        caches.open(CACHE_NAME).then((cache) => {
+                                            cache.put(e.request, responseToCache);
+                                        });
+                                    }
+                                    return response;
+                                })
+                                .catch(() => {
+                                    // Si falla, intentar servir desde cache
+                                    return caches.match(e.request)
+                                        .then((response) => {
+                                            return response || new Response('Offline', { status: 503 });
+                                        });
+                                })
+                        );
+                    }
+                });
+
+                // Background Sync para sincronización automática
+                self.addEventListener('sync', (e) => {
+                    if (e.tag === 'sync-datos') {
+                        e.waitUntil(
+                            self.clients.matchAll().then((clients) => {
+                                clients.forEach((client) => {
+                                    client.postMessage({ type: 'SYNC_PENDIENTES' });
+                                });
+                            })
+                        );
+                    }
+                });
+            `;
+
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            
+            navigator.serviceWorker.register(swUrl, { scope: '/' })
+                .then((reg) => {
+                    console.log('Service Worker registrado');
+                    
+                    // Intentar registrar Background Sync si está disponible
+                    if ('SyncManager' in window && reg.active) {
+                        reg.sync.register('sync-datos').catch(() => {
+                            console.log('Background Sync no disponible');
+                        });
+                    }
+                })
+                .catch((err) => console.log('Error en SW:', err));
+
+            // Escuchar mensajes del Service Worker
+            navigator.serviceWorker.addEventListener('message', (e) => {
+                if (e.data.type === 'SYNC_PENDIENTES') {
+                    sincronizar();
+                }
+            });
+        }
+
+        // ============================================
+        // DATOS Y FUNCIONES PRINCIPALES
+        // ============================================
         let cargas = [];
         let gastos = [];
+        let pendientes = { cargas: [], gastos: [] };
+
         const categorias = [
             { nombre: 'alimentación', palabras: ['comida', 'bizcocho', 'bizcochito', 'pan', 'restaurante', 'cafe', 'almuerzo', 'desayuno', 'cena', 'dulce', 'pizza', 'hamburguesa'] },
             { nombre: 'transporte', palabras: ['pasaje', 'colectivo', 'uber', 'taxi', 'gasolina', 'viaje', 'bus', 'tren'] },
@@ -538,9 +738,11 @@
             try {
                 cargas = JSON.parse(localStorage.getItem('cargas') || '[]');
                 gastos = JSON.parse(localStorage.getItem('gastos') || '[]');
+                pendientes = JSON.parse(localStorage.getItem('pendientes') || '{"cargas":[],"gastos":[]}');
             } catch (e) {
                 cargas = [];
                 gastos = [];
+                pendientes = { cargas: [], gastos: [] };
             }
             actualizar();
         }
@@ -549,8 +751,9 @@
             try {
                 localStorage.setItem('cargas', JSON.stringify(cargas));
                 localStorage.setItem('gastos', JSON.stringify(gastos));
+                localStorage.setItem('pendientes', JSON.stringify(pendientes));
             } catch (e) {
-                console.error('Error guardando:', e);
+                mostrarMensaje('Error al guardar localmente', 'error');
             }
         }
 
@@ -596,23 +799,43 @@
                 return;
             }
 
-            gastos.push({
+            const gasto = {
                 id: Date.now(),
                 monto,
                 desc,
                 cat,
-                fecha: new Date().toLocaleDateString('es-AR')
-            });
+                fecha: new Date().toLocaleDateString('es-AR'),
+                synced: isOnline
+            };
+
+            gastos.push(gasto);
+
+            // Si está offline, marcar como pendiente
+            if (!isOnline) {
+                pendientes.gastos.push(gasto.id);
+                mostrarMensaje('✅ $' + monto + ' guardado (pendiente de sincronizar)', 'warning');
+            } else {
+                mostrarMensaje(`✅ $${monto} en ${cat}`, 'success');
+            }
 
             guardar();
             input.value = '';
-            mostrarMensaje(`✅ $${monto} en ${cat}`, 'success');
             actualizar();
             input.focus();
+
+            // Intentar sincronizar si está online
+            if (isOnline) {
+                sincronizar();
+            } else if ('serviceWorker' in navigator && 'SyncManager' in window) {
+                navigator.serviceWorker.ready.then((reg) => {
+                    reg.sync.register('sync-datos').catch(() => {});
+                });
+            }
         }
 
         function eliminar(id) {
             gastos = gastos.filter(g => g.id !== id);
+            pendientes.gastos = pendientes.gastos.filter(pid => pid !== id);
             guardar();
             actualizar();
         }
@@ -666,8 +889,10 @@
                 const total = items.reduce((s, i) => s + i.monto, 0);
                 html += `<div class="date-header">${fecha} • $${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</div>`;
                 items.forEach(g => {
+                    const isPending = pendientes.gastos.includes(g.id);
                     html += `
-                        <div class="transaction">
+                        <div class="transaction ${isPending ? 'pending' : ''}">
+                            ${isPending ? '<div class="pending-badge">⏳ Pendiente</div>' : ''}
                             <div class="trans-info">
                                 <h3>${g.desc}</h3>
                                 <p>${g.cat}</p>
@@ -837,9 +1062,10 @@
         function renderizarCargas() {
             let html = '';
             cargas.forEach((c, idx) => {
+                const isPending = pendientes.cargas.includes(c.id);
                 html += `
-                    <div class="carga-item">
-                        <span>Carga ${idx + 1}</span>
+                    <div class="carga-item ${isPending ? 'pending' : ''}">
+                        <span>Carga ${idx + 1} ${isPending ? '⏳' : ''}</span>
                         <div>
                             <span class="carga-monto">$${c.monto.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
                             <button style="background: none; border: none; color: #999; margin-left: 12px; cursor: pointer;" onclick="eliminarCarga(${idx})">✕</button>
@@ -856,25 +1082,86 @@
                 alert('Ingresa un monto válido');
                 return;
             }
-            cargas.push({
+            const carga = {
                 id: Date.now(),
                 monto: val,
-                fecha: new Date().toLocaleDateString('es-AR')
-            });
+                fecha: new Date().toLocaleDateString('es-AR'),
+                synced: isOnline
+            };
+
+            cargas.push(carga);
+
+            if (!isOnline) {
+                pendientes.cargas.push(carga.id);
+                mostrarMensaje(`✅ Saldo de $${val.toLocaleString('es-AR', { minimumFractionDigits: 2 })} guardado (pendiente de sincronizar)`, 'warning');
+            } else {
+                mostrarMensaje(`✅ Saldo de $${val.toLocaleString('es-AR', { minimumFractionDigits: 2 })} cargado`, 'success');
+            }
+
             guardar();
             actualizar();
             document.getElementById('saldoInput').value = '';
             renderizarCargas();
-            mostrarMensaje(`✅ Saldo de $${val.toLocaleString('es-AR', { minimumFractionDigits: 2 })} cargado`, 'success');
+
+            if (isOnline) {
+                sincronizar();
+            }
         }
 
         function eliminarCarga(idx) {
+            const cargaId = cargas[idx]?.id;
             cargas.splice(idx, 1);
+            if (cargaId) {
+                pendientes.cargas = pendientes.cargas.filter(pid => pid !== cargaId);
+            }
             guardar();
             actualizar();
             renderizarCargas();
         }
 
+        // ============================================
+        // SINCRONIZACIÓN AUTOMÁTICA
+        // ============================================
+        function sincronizar() {
+            if (!isOnline || (pendientes.cargas.length === 0 && pendientes.gastos.length === 0)) {
+                return;
+            }
+
+            const statusBar = document.getElementById('statusBar');
+            statusBar.className = 'status-bar syncing';
+            document.getElementById('statusText').textContent = '⟳ Sincronizando...';
+
+            // Simular sincronización (en una app real, aquí iría un fetch a tu backend)
+            setTimeout(() => {
+                // Marcar todos como sincronizados
+                gastos.forEach(g => {
+                    if (pendientes.gastos.includes(g.id)) {
+                        g.synced = true;
+                    }
+                });
+                cargas.forEach(c => {
+                    if (pendientes.cargas.includes(c.id)) {
+                        c.synced = true;
+                    }
+                });
+
+                pendientes = { cargas: [], gastos: [] };
+                guardar();
+                actualizar();
+
+                actualizarEstadoConexion();
+                mostrarMensaje('✅ Sincronización completada', 'success');
+            }, 500);
+        }
+
+        // Sincronizar periódicamente cuando está online
+        setInterval(() => {
+            if (isOnline) {
+                sincronizar();
+            }
+        }, 30000); // Cada 30 segundos
+
+        // Event listeners
         document.getElementById('gastoInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') agregarGasto();
         });
@@ -898,7 +1185,9 @@
             a.click();
         }
 
+        // Inicialización
         cargar();
+        actualizarEstadoConexion();
     </script>
 </body>
 </html>
