@@ -735,32 +735,51 @@
         ];
 
         function verificarCargaAutomatica() {
-            const hoy = new Date();
-            const diaActual = hoy.getDate();
-            const mesAnio = `${hoy.getMonth()}-${hoy.getFullYear()}`;
-            const ultimaCargaAutomatica = localStorage.getItem('ultimaCargaAutomatica') || '';
+            try {
+                const hoy = new Date();
+                const diaActual = hoy.getDate();
+                const mesAnio = `${hoy.getMonth()}-${hoy.getFullYear()}`;
+                const ultimaCargaAutomatica = localStorage.getItem('ultimaCargaAutomatica') || '';
 
-            // Si es el día 18 y no se ha creado el gasto este mes
-            if (diaActual === 18 && ultimaCargaAutomatica !== mesAnio) {
-                const saldoDisponible = obtenerSaldoTotal() - gastos.reduce((s, g) => s + g.monto, 0);
-                
-                // Solo crear el gasto si hay saldo disponible
-                if (saldoDisponible >= 6000) {
-                    gastos.push({
-                        id: Date.now(),
-                        monto: 6000,
-                        desc: 'YouTube Premium',
-                        cat: 'entretenimiento',
-                        fecha: new Date().toLocaleDateString('es-AR'),
-                        synced: isOnline,
-                        automatico: true
-                    });
+                // Si es el día 18 y no se ha creado el gasto este mes
+                if (diaActual === 18 && ultimaCargaAutomatica !== mesAnio) {
+                    const saldoDisponible = obtenerSaldoTotal() - gastos.reduce((s, g) => s + g.monto, 0);
+                    
+                    // Solo crear el gasto si hay saldo disponible
+                    if (saldoDisponible >= 6000) {
+                        gastos.push({
+                            id: Date.now(),
+                            monto: 6000,
+                            desc: 'YouTube Premium',
+                            cat: 'entretenimiento',
+                            fecha: new Date().toLocaleDateString('es-AR'),
+                            synced: isOnline,
+                            automatico: true
+                        });
 
-                    guardar();
-                    localStorage.setItem('ultimaCargaAutomatica', mesAnio);
-                    mostrarMensaje('✅ Suscripción YouTube Premium debitada', 'success');
+                        guardar();
+                        localStorage.setItem('ultimaCargaAutomatica', mesAnio);
+                        setTimeout(() => {
+                            mostrarMensaje('✅ Suscripción YouTube Premium debitada', 'success');
+                        }, 100);
+                    }
                 }
+            } catch (e) {
+                console.log('Error en carga automática:', e);
             }
+        }
+
+        function cargar() {
+            try {
+                cargas = JSON.parse(localStorage.getItem('cargas') || '[]');
+                gastos = JSON.parse(localStorage.getItem('gastos') || '[]');
+                pendientes = JSON.parse(localStorage.getItem('pendientes') || '{"cargas":[],"gastos":[]}');
+            } catch (e) {
+                cargas = [];
+                gastos = [];
+                pendientes = { cargas: [], gastos: [] };
+            }
+            actualizar();
         }
 
         function guardar() {
