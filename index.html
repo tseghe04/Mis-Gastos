@@ -520,8 +520,8 @@
 
     <div class="container">
         <div class="card saldo-card">
-            <div class="saldo-label">💵 Saldo Total</div>
-            <div class="saldo-amount" id="saldoDisplay">$0</div>
+            <div class="saldo-label">💵 Saldo Disponible</div>
+            <div class="saldo-amount" id="balanceDisplay">$0</div>
             <button class="saldo-btn" onclick="openSaldoModal()">➕ Cargar Saldo</button>
         </div>
 
@@ -531,8 +531,8 @@
                 <div class="balance-value" id="spentDisplay">$0</div>
             </div>
             <div class="balance-item">
-                <div class="balance-label">Disponible</div>
-                <div class="balance-value" id="balanceDisplay">$0</div>
+                <div class="balance-label">Último Cargo</div>
+                <div class="balance-value" id="ultimoCargo">$0</div>
             </div>
         </div>
 
@@ -852,13 +852,21 @@
             const gastado = gastos.reduce((s, g) => s + g.monto, 0);
             const disponible = saldoTotal - gastado;
             const promedio = gastos.length ? gastado / gastos.length : 0;
+            const ultimoCargo = cargas.length > 0 ? cargas[cargas.length - 1].monto : 0;
 
-            document.getElementById('saldoDisplay').textContent = `$${saldoTotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+            // Mostrar saldo disponible en la tarjeta grande
+            const balanceMainEl = document.getElementById('balanceDisplay');
+            balanceMainEl.textContent = `$${Math.abs(disponible).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+            
+            // Mostrar último cargo en los items pequeños
+            document.getElementById('ultimoCargo').textContent = `$${ultimoCargo.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
             document.getElementById('spentDisplay').textContent = `$${gastado.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
             
-            const balEl = document.getElementById('balanceDisplay');
-            balEl.textContent = `$${Math.abs(disponible).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
-            balEl.className = 'balance-value ' + (disponible >= 0 ? 'balance-positive' : 'balance-negative');
+            // Aplicar color al balance pequeño (items)
+            const balEl = document.querySelectorAll('.balance-value')[1];
+            if (balEl) {
+                balEl.className = 'balance-value ' + (disponible >= 0 ? 'balance-positive' : 'balance-negative');
+            }
 
             if (gastos.length === 0) {
                 document.getElementById('statsDiv').classList.add('hidden');
