@@ -725,7 +725,7 @@
         let pendientes = { cargas: [], gastos: [] };
 
         const categorias = [
-            { nombre: 'alimentación', palabras: ['comida', 'bizcocho', 'bizcochito', 'pan', 'restaurante', 'cafe', 'almuerzo', 'desayuno', 'cena', 'dulce', 'pizza', 'hamburguesa'] },
+            { nombre: 'alimentación', palabras: ['comida', 'bizcocho', 'bizcochito', 'pan', 'restaurante', 'cafe', 'almuerzo', 'desayuno', 'cena', 'dulce', 'pizza', 'hamburguesa', 'verduleria', 'avena'] },
             { nombre: 'transporte', palabras: ['pasaje', 'colectivo', 'uber', 'taxi', 'gasolina', 'viaje', 'bus', 'tren'] },
             { nombre: 'entretenimiento', palabras: ['cine', 'película', 'concierto', 'juego', 'diversión', 'entrada'] },
             { nombre: 'servicios', palabras: ['teléfono', 'internet', 'luz', 'gas', 'agua', 'telefonía'] },
@@ -734,17 +734,33 @@
             { nombre: 'otros', palabras: [] }
         ];
 
-        function cargar() {
-            try {
-                cargas = JSON.parse(localStorage.getItem('cargas') || '[]');
-                gastos = JSON.parse(localStorage.getItem('gastos') || '[]');
-                pendientes = JSON.parse(localStorage.getItem('pendientes') || '{"cargas":[],"gastos":[]}');
-            } catch (e) {
-                cargas = [];
-                gastos = [];
-                pendientes = { cargas: [], gastos: [] };
+        function verificarCargaAutomatica() {
+            const hoy = new Date();
+            const diaActual = hoy.getDate();
+            const mesAnio = `${hoy.getMonth()}-${hoy.getFullYear()}`;
+            const ultimaCargaAutomatica = localStorage.getItem('ultimaCargaAutomatica') || '';
+
+            // Si es el día 18 y no se ha creado el gasto este mes
+            if (diaActual === 18 && ultimaCargaAutomatica !== mesAnio) {
+                const saldoDisponible = obtenerSaldoTotal() - gastos.reduce((s, g) => s + g.monto, 0);
+                
+                // Solo crear el gasto si hay saldo disponible
+                if (saldoDisponible >= 6000) {
+                    gastos.push({
+                        id: Date.now(),
+                        monto: 6000,
+                        desc: 'YouTube Premium',
+                        cat: 'entretenimiento',
+                        fecha: new Date().toLocaleDateString('es-AR'),
+                        synced: isOnline,
+                        automatico: true
+                    });
+
+                    guardar();
+                    localStorage.setItem('ultimaCargaAutomatica', mesAnio);
+                    mostrarMensaje('✅ Suscripción YouTube Premium debitada', 'success');
+                }
             }
-            actualizar();
         }
 
         function guardar() {
@@ -1196,6 +1212,7 @@
         // Inicialización
         cargar();
         actualizarEstadoConexion();
+        verificarCargaAutomatica();
     </script>
 </body>
 </html>
